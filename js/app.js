@@ -102,17 +102,22 @@ const ITEMS = [
   /* 99 */ '✨ קסם נצחי',
 ];
 
-// Build static list DOM
+// Strip leading emoji from display text
+function stripEmoji(str) {
+  return str.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+/gu, '').trim();
+}
+
+// Build static list DOM — items 1–99 (id matches display number)
 const listEl = document.getElementById('itemsList');
-ITEMS.forEach((text, i) => {
+ITEMS.slice(1, 100).forEach((text, i) => {
   const row = document.createElement('div');
   row.className = 'list-item';
-  row.id = `item-${i}`;
+  row.id = `item-${i + 1}`;
   row.innerHTML = `
-    <span class="list-num">${i}</span>
     <div class="list-body">
-      <div class="list-text">${text}</div>
-    </div>`;
+      <div class="list-text">${stripEmoji(text)}</div>
+    </div>
+    <span class="list-num">${i + 1}.</span>`;
   listEl.appendChild(row);
 });
 
@@ -135,12 +140,28 @@ const SYMBOL_META = [
 // ─── Memory ───────────────────────────────────────────────────────────────────
 const memory = { d1: null, d2: null, combined: null, prevVal: null };
 
+const SETTINGS_GEAR_SVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+  <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41L9.25 5.35c-.59.24-1.13.56-1.62.94L5.24 5.33c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+</svg>`;
+
 // ─── Build icon grids ─────────────────────────────────────────────────────────
 function buildGrid(containerId, pageIdx) {
   const container = document.getElementById(containerId);
   let symIdx = 0, digIdx = 0;
   for (let row = 0; row < 6; row++) {
     for (let col = 0; col < 4; col++) {
+      // Settings icon: page 1, row 0, last col
+      if (pageIdx === 0 && row === 0 && col === 3) {
+        const el = document.createElement('div');
+        el.className = 'app-icon shape-squircle';
+        el.id = 'settingsIcon';
+        el.innerHTML = `<div class="icon-img icon-settings">${SETTINGS_GEAR_SVG}</div><span class="icon-name">Settings</span>`;
+        el.addEventListener('click', openSettings);
+        el.addEventListener('touchend', (e) => { e.preventDefault(); openSettings(); }, { passive: false });
+        container.appendChild(el);
+        continue;
+      }
+
       const isDigit = row >= 1 && (col === 1 || col === 2);
       const el = document.createElement('div');
       let app;
@@ -372,22 +393,46 @@ attachBackSwipe(document.getElementById('page4'), document.getElementById('page3
   });
 }());
 
-// ─── Show result ─────────────────────────────────────────────────────────────
-const SELECTED_LABEL = '6 ❤️ לב אדום';
+// ─── Settings modal ───────────────────────────────────────────────────────────
+let selectedLabel = localStorage.getItem('forcebag_label') || 'לב אדום';
 
+const settingsOverlay = document.getElementById('settingsOverlay');
+const settingsInput   = document.getElementById('settingsInput');
+
+function openSettings() {
+  settingsInput.value = selectedLabel;
+  settingsOverlay.classList.add('open');
+  setTimeout(() => settingsInput.focus(), 350);
+}
+function closeSettings() {
+  settingsOverlay.classList.remove('open');
+}
+
+document.getElementById('settingsSave').addEventListener('click', () => {
+  const val = settingsInput.value.trim();
+  if (val) {
+    selectedLabel = val;
+    localStorage.setItem('forcebag_label', val);
+  }
+  closeSettings();
+});
+document.getElementById('settingsCancel').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) closeSettings(); });
+
+// ─── Show result ─────────────────────────────────────────────────────────────
 function showResult() {
   const val = memory.combined;
 
   // Restore previous item's original text
   if (memory.prevVal !== null) {
     const prev = document.querySelector(`#item-${memory.prevVal} .list-text`);
-    if (prev) prev.textContent = ITEMS[memory.prevVal] || '—';
+    if (prev) prev.textContent = stripEmoji(ITEMS[memory.prevVal] || '—');
   }
   memory.prevVal = val;
 
   // Set selected item's text
   const target = document.querySelector(`#item-${val} .list-text`);
-  if (target) target.textContent = SELECTED_LABEL;
+  if (target) target.textContent = selectedLabel;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
