@@ -6,7 +6,7 @@ const ITEMS = [
   /* 3 */ '🌸 שלישייה',
   /* 4 */ '🔮 ארבעה',
   /* 5 */ '💎 חמישה',
-  /* 6 */ '❤️ לב אדום',
+  /* 6 */ '🌟 שישה',
   /* 7 */ '🌈 שבעה',
   /* 8 */ '🌊 שמונה',
   /* 9 */ '🦋 תשעה',
@@ -112,9 +112,7 @@ ITEMS.forEach((text, i) => {
     <span class="list-num">${i}</span>
     <div class="list-body">
       <div class="list-text">${text}</div>
-      <div class="list-sum-label" id="label-${i}" style="display:none"></div>
-    </div>
-    <span class="list-check">✓</span>`;
+    </div>`;
   listEl.appendChild(row);
 });
 
@@ -135,16 +133,7 @@ const SYMBOL_META = [
 ];
 
 // ─── Memory ───────────────────────────────────────────────────────────────────
-const memory = { d1: null, d2: null, combined: null };
-
-// ─── Clock ───────────────────────────────────────────────────────────────────
-function tick() {
-  const d = new Date();
-  const t = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-  document.getElementById('time1').textContent = t;
-  document.getElementById('time2').textContent = t;
-}
-tick(); setInterval(tick, 15000);
+const memory = { d1: null, d2: null, combined: null, prevVal: null };
 
 // ─── Build icon grids ─────────────────────────────────────────────────────────
 function buildGrid(containerId, pageIdx) {
@@ -175,7 +164,7 @@ buildGrid('grid1', 0);
 buildGrid('grid2', 1);
 
 // ─── Page navigation state ────────────────────────────────────────────────────
-const PAGES = ['page1','page2','page3'];
+const PAGES = ['page1','page2','page3','page4'];
 let W = window.innerWidth;
 window.addEventListener('resize', () => { W = window.innerWidth; });
 let currentIdx = 0;
@@ -196,6 +185,9 @@ function applyPositions(animated) {
     else if (i === currentIdx) setPage(el,   0, 1,    animated);
     else                       setPage(el, 100, 1,    animated);
   });
+  const onResult = currentIdx === PAGES.length - 1;
+  document.querySelector('.dock').style.display          = onResult ? 'none' : '';
+  document.querySelector('.home-indicator').style.display = onResult ? 'none' : '';
 }
 
 function commitForward() {
@@ -245,7 +237,7 @@ function attachIconSwipe(el, app, pageIdx) {
       e.preventDefault();
       const progress = Math.min(1, -dx / W);
       const cur  = document.getElementById(PAGES[pageIdx]);
-      const next = pageIdx < 2 ? document.getElementById(PAGES[pageIdx + 1]) : null;
+      const next = pageIdx < PAGES.length - 1 ? document.getElementById(PAGES[pageIdx + 1]) : null;
       cur.style.transition  = 'none';
       cur.style.transform   = `translateX(${-progress * 28}%) scale(${1 - progress * 0.06})`;
       cur.style.opacity     = String(1 - progress * 0.45);
@@ -285,6 +277,7 @@ function onCommitForward(app, el) {
   } else if (currentIdx === 1) {
     memory.d2 = app.value;
     memory.combined = parseInt(String(memory.d1) + String(memory.d2), 10);
+  } else if (currentIdx === 2) {
     showResult();
   }
   flashIcon(el);
@@ -347,28 +340,54 @@ function attachBackSwipe(pageEl, prevEl) {
 
 attachBackSwipe(document.getElementById('page2'), document.getElementById('page1'));
 attachBackSwipe(document.getElementById('page3'), document.getElementById('page2'));
+attachBackSwipe(document.getElementById('page4'), document.getElementById('page3'));
+
+// ─── Notes icon tap (page 3 → page 4) ───────────────────────────────────────
+(function () {
+  const el = document.getElementById('notesIcon');
+  let tstart = null;
+
+  el.addEventListener('touchstart', (e) => {
+    tstart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    el.classList.add('pressing');
+  }, { passive: true });
+
+  el.addEventListener('touchend', (e) => {
+    el.classList.remove('pressing');
+    if (!tstart || currentIdx !== 2) { tstart = null; return; }
+    const dx = e.changedTouches[0].clientX - tstart.x;
+    const dy = e.changedTouches[0].clientY - tstart.y;
+    tstart = null;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) return;
+    e.preventDefault();
+    flashIcon(el); showResult(); commitForward();
+  });
+
+  el.addEventListener('mousedown', () => el.classList.add('pressing'));
+  el.addEventListener('mouseleave', () => el.classList.remove('pressing'));
+  el.addEventListener('click', () => {
+    if (currentIdx !== 2) return;
+    el.classList.remove('pressing');
+    flashIcon(el); showResult(); commitForward();
+  });
+}());
 
 // ─── Show result ─────────────────────────────────────────────────────────────
-const FIXED_LABEL = '6 ❤️ לב אדום';
+const SELECTED_LABEL = '6 ❤️ לב אדום';
 
 function showResult() {
-  const val  = memory.combined;
-  const item = ITEMS[val] || '—';
+  const val = memory.combined;
 
-  document.getElementById('rhBadge').textContent = val;
-  document.getElementById('rhItem').textContent  = item;
-  document.getElementById('rhSub').textContent   = `פריט מספר ${val}`;
-
-  document.querySelectorAll('.list-item.highlighted').forEach(r => r.classList.remove('highlighted'));
-  document.querySelectorAll('.list-sum-label').forEach(l => { l.style.display = 'none'; l.textContent = ''; });
-
-  const target = document.getElementById(`item-${val}`);
-  if (target) {
-    target.classList.add('highlighted');
-    const labelEl = document.getElementById(`label-${val}`);
-    if (labelEl) { labelEl.textContent = FIXED_LABEL; labelEl.style.display = 'inline-block'; }
-    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
+  // Restore previous item's original text
+  if (memory.prevVal !== null) {
+    const prev = document.querySelector(`#item-${memory.prevVal} .list-text`);
+    if (prev) prev.textContent = ITEMS[memory.prevVal] || '—';
   }
+  memory.prevVal = val;
+
+  // Set selected item's text
+  const target = document.querySelector(`#item-${val} .list-text`);
+  if (target) target.textContent = SELECTED_LABEL;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -380,6 +399,7 @@ function flashIcon(el) {
 }
 function pingDI() {
   const di = document.getElementById('di');
+  if (!di) return;
   di.classList.add('ping');
   setTimeout(() => di.classList.remove('ping'), 600);
 }

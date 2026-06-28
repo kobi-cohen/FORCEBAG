@@ -57,21 +57,10 @@ body {
     radial-gradient(1px 1px at 92% 45%, rgba(255,255,255,0.5) 0%, transparent 100%);
 }
 
-/* ─── Status Bar — respects Dynamic Island / notch safe area ─── */
-.status-bar {
-  position: relative;
-  padding: max(env(safe-area-inset-top), 14px) 28px 10px;
-  display: flex; align-items: flex-end;
-  justify-content: space-between; z-index: 10;
-}
-.status-time { color: white; font-size: 17px; font-weight: 600; letter-spacing: -0.4px; }
-.status-right { display: flex; gap: 7px; align-items: center; }
-.status-right svg { fill: white; }
-
 /* ─── Icons Grid ─── */
 .icons-grid {
   position: absolute;
-  top: calc(max(env(safe-area-inset-top), 14px) + 48px);
+  top: calc(max(env(safe-area-inset-top), 0px) + 16px);
   left: 0; right: 0;
   padding: 8px 22px 0;
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -149,18 +138,19 @@ body {
 /* ─── Page Dots ─── */
 .page-dots {
   position: absolute;
-  bottom: calc(max(env(safe-area-inset-bottom), 0px) + 108px);
+  bottom: calc(max(env(safe-area-inset-bottom), 0px) + 116px);
   left: 0; right: 0;
   display: flex; justify-content: center; gap: 7px; z-index: 5;
 }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); }
 .dot.active { background: white; width: 20px; border-radius: 4px; }
 
-/* ─── Dock ─── */
+/* ─── Dock — fixed layer above all pages ─── */
 .dock {
   position: absolute;
   bottom: calc(max(env(safe-area-inset-bottom), 0px) + 18px);
   left: 18px; right: 18px; height: 88px;
+  z-index: 50;
   background: rgba(255,255,255,0.14);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -175,7 +165,7 @@ body {
 .dock-safari { background: linear-gradient(145deg, #0a84ff, #00c7f5); }
 .dock-camera { background: linear-gradient(145deg, #636366, #2c2c2e); }
 
-/* ─── Home Indicator ─── */
+/* ─── Home Indicator — fixed layer above all pages ─── */
 .home-indicator {
   position: absolute;
   bottom: max(env(safe-area-inset-bottom), 8px);
@@ -186,6 +176,20 @@ body {
 
 /* ─── Page base ─── */
 .page { position: absolute; inset: 0; }
+
+/* Decorative icons — no interaction */
+.deco-icon { cursor: default; opacity: 0.75; pointer-events: none; }
+
+.icon-notes {
+  background: linear-gradient(145deg, #ffd60a, #ff9f0a);
+  box-shadow: 0 8px 28px rgba(255,200,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.deco-calendar { background: linear-gradient(145deg, #ff375f, #ff6b6b); }
+.deco-clock    { background: linear-gradient(145deg, #636366, #48484a); }
+.deco-weather  { background: linear-gradient(145deg, #32ade6, #0a84ff); }
+.deco-photos   { background: radial-gradient(circle at 30% 30%, #ffd60a 0%, #ff6b00 30%, #ff375f 55%, #bf5af2 75%, #0a84ff 100%); }
+.deco-music    { background: linear-gradient(145deg, #bf5af2, #fc2779); }
+.deco-maps     { background: linear-gradient(145deg, #30d158, #34c759); }
 
 /* ─── Drag feedback ─── */
 .app-icon.pressing .icon-img { transform: scale(0.92); }
@@ -200,23 +204,15 @@ body {
 }
 .result-header {
   flex-shrink: 0;
-  padding: calc(max(env(safe-area-inset-top), 14px) + 54px) 20px 12px;
+  padding: calc(max(env(safe-area-inset-top), 0px) + 16px) 24px 14px;
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  display: flex; align-items: center; gap: 14px; z-index: 10;
+  z-index: 10;
 }
-.rh-badge {
-  width: 54px; height: 54px; border-radius: 15px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 900; color: white;
-  background: linear-gradient(145deg, #4776e6, #8e54e9);
-  box-shadow: 0 4px 16px rgba(100,100,255,0.35);
+.notes-title {
+  font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.5px;
 }
-.rh-text { flex: 1; min-width: 0; }
-.rh-label { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
-.rh-item  { font-size: 16px; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rh-sub   { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
 /* ─── Scrollable list ─── */
 .items-list {
@@ -231,35 +227,13 @@ body {
   padding: 11px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
   direction: rtl; position: relative;
 }
-.list-item.highlighted {
-  background: rgba(255,255,255,0.08);
-  border-bottom: 1px solid rgba(255,255,255,0.12);
-}
-.list-item.highlighted::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px; background: linear-gradient(180deg, #4776e6, #8e54e9);
-  border-radius: 0 2px 2px 0;
-}
 .list-num {
   font-size: 11px; color: rgba(255,255,255,0.2);
   font-variant-numeric: tabular-nums; min-width: 22px;
   text-align: right; padding-top: 2px; flex-shrink: 0;
 }
-.list-item.highlighted .list-num { color: rgba(255,255,255,0.5); font-weight: 700; }
 .list-body { flex: 1; direction: rtl; text-align: right; }
 .list-text { font-size: 15px; color: rgba(255,255,255,0.5); font-weight: 400; }
-.list-item.highlighted .list-text { color: rgba(255,255,255,0.75); }
-
-.list-sum-label {
-  display: none;
-  margin-top: 4px; font-size: 13px; font-weight: 700; color: white;
-  background: rgba(255,255,255,0.12); border-radius: 8px;
-  padding: 3px 10px;
-}
-.list-item.highlighted .list-sum-label { display: inline-block; }
-
-.list-check { font-size: 13px; color: #4cd964; display: none; padding-top: 2px; flex-shrink: 0; }
-.list-item.highlighted .list-check { display: block; }
 
 .back-strip {
   position: absolute;
