@@ -202,7 +202,7 @@ function setPage(el, x, opacity, animated) {
 function applyPositions(animated) {
   PAGES.forEach((id, i) => {
     const el = document.getElementById(id);
-    if (i < currentIdx)        setPage(el, -28, 0.55, animated);
+    if (i < currentIdx)        setPage(el, -28, 0, animated);
     else if (i === currentIdx) setPage(el,   0, 1,    animated);
     else                       setPage(el, 100, 1,    animated);
   });
@@ -261,7 +261,7 @@ function attachIconSwipe(el, app, pageIdx) {
       const next = pageIdx < PAGES.length - 1 ? document.getElementById(PAGES[pageIdx + 1]) : null;
       cur.style.transition  = 'none';
       cur.style.transform   = `translateX(${-progress * 28}%) scale(${1 - progress * 0.06})`;
-      cur.style.opacity     = String(1 - progress * 0.45);
+      cur.style.opacity     = String(1 - progress);
       if (next) {
         next.style.transition = 'none';
         next.style.transform  = `translateX(${(1 - progress) * 100}%)`;
@@ -334,7 +334,7 @@ function attachBackSwipe(pageEl, prevEl) {
       pageEl.style.transform  = `translateX(${progress * 100}%)`;
       prevEl.style.transition = 'none';
       prevEl.style.transform  = `translateX(${-28 + progress * 28}%) scale(${0.94 + progress * 0.06})`;
-      prevEl.style.opacity    = String(0.55 + progress * 0.45);
+      prevEl.style.opacity    = String(progress);
     }
   }
 
