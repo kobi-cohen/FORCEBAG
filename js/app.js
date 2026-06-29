@@ -212,7 +212,10 @@ function applyPositions(animated) {
     else                       setPage(el, 100, 1,    animated);
   });
   const onResult = currentIdx === PAGES.length - 1;
-  document.querySelector('.dock').style.display          = onResult ? 'none' : '';
+  const dock = document.querySelector('.dock');
+  dock.style.display    = onResult ? 'none' : '';
+  dock.style.transition = animated ? T : 'none';
+  dock.style.transform  = 'translateX(0)';
   document.querySelector('.home-indicator').style.display = onResult ? 'none' : '';
 }
 
@@ -279,6 +282,9 @@ function attachForwardSwipe(pageEl, pageIdx) {
         next.style.transition = 'none';
         next.style.transform  = `translateX(${(1 - progress) * 100}%)`;
       }
+      const dock = document.querySelector('.dock');
+      dock.style.transition = 'none';
+      dock.style.transform  = `translateX(${-progress * 100}%)`;
     }
   }
 
@@ -349,6 +355,9 @@ function attachBackSwipe(pageEl, prevEl) {
       prevEl.style.transition = 'none';
       prevEl.style.transform  = `translateX(${-28 + progress * 28}%) scale(${0.94 + progress * 0.06})`;
       prevEl.style.opacity    = String(progress);
+      const dock = document.querySelector('.dock');
+      dock.style.transition = 'none';
+      dock.style.transform  = `translateX(${progress * 100}%)`;
     }
   }
 
