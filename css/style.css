@@ -49,31 +49,31 @@ body {
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  will-change: transform;
 }
 
 .blob-1 {
-  width: 460px; height: 460px;
-  background: radial-gradient(circle, rgba(110,40,220,0.75) 0%, transparent 70%);
-  top: -120px; left: -100px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(110,40,220,0.55) 0%, rgba(110,40,220,0.08) 50%, transparent 70%);
+  top: -250px; left: -200px;
   animation: blob1 20s ease-in-out infinite;
 }
 .blob-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(30,110,255,0.65) 0%, transparent 70%);
-  top: 25%; right: -120px;
+  width: 620px; height: 620px;
+  background: radial-gradient(circle, rgba(30,110,255,0.50) 0%, rgba(30,110,255,0.07) 50%, transparent 70%);
+  top: 20%; right: -220px;
   animation: blob2 26s ease-in-out infinite;
 }
 .blob-3 {
-  width: 380px; height: 380px;
-  background: radial-gradient(circle, rgba(220,40,100,0.55) 0%, transparent 70%);
-  bottom: -60px; left: 15%;
+  width: 580px; height: 580px;
+  background: radial-gradient(circle, rgba(220,40,100,0.45) 0%, rgba(220,40,100,0.06) 50%, transparent 70%);
+  bottom: -150px; left: 5%;
   animation: blob3 22s ease-in-out infinite;
 }
 .blob-4 {
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(255,130,0,0.35) 0%, transparent 70%);
-  top: 55%; left: -60px;
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(255,130,0,0.30) 0%, rgba(255,130,0,0.04) 50%, transparent 70%);
+  top: 50%; left: -120px;
   animation: blob4 18s ease-in-out infinite;
 }
 
