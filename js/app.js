@@ -144,6 +144,9 @@ const SETTINGS_GEAR_SVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill=
   <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41L9.25 5.35c-.59.24-1.13.56-1.62.94L5.24 5.33c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
 </svg>`;
 
+// ─── Icon app-data map (replaces per-icon window listeners) ──────────────────
+const iconData = new WeakMap();
+
 // ─── Build icon grids ─────────────────────────────────────────────────────────
 function buildGrid(containerId, pageIdx) {
   const container = document.getElementById(containerId);
@@ -176,13 +179,15 @@ function buildGrid(containerId, pageIdx) {
         el.className = `app-icon shape-${s.shape}`;
         el.innerHTML = `<div class="icon-img sym-${sNum}"><span class="icon-emoji">${s.emoji}</span></div><span class="icon-name">${s.name}</span>`;
       }
-      attachIconSwipe(el, app, pageIdx);
+      iconData.set(el, app);
       container.appendChild(el);
     }
   }
 }
 buildGrid('grid1', 0);
 buildGrid('grid2', 1);
+attachForwardSwipe(document.getElementById('page1'), 0);
+attachForwardSwipe(document.getElementById('page2'), 1);
 
 // ─── Page navigation state ────────────────────────────────────────────────────
 const PAGES = ['page1','page2','page3','page4'];
@@ -224,9 +229,9 @@ function commitBack() {
   applyPositions(true);
 }
 
-// ─── Icon swipe (drag LEFT to go forward) ────────────────────────────────────
-function attachIconSwipe(el, app, pageIdx) {
-  let sx, sy, st, active = false, dragging = false;
+// ─── Forward swipe (drag LEFT to go forward) — one handler per page ──────────
+function attachForwardSwipe(pageEl, pageIdx) {
+  let sx, sy, st, activeIcon = null, dragging = false, active = false;
   const THRESH = 50;
 
   function getXY(e) {
@@ -237,10 +242,13 @@ function attachIconSwipe(el, app, pageIdx) {
 
   function onStart(e) {
     if (pageIdx !== currentIdx) return;
+    const icon = e.target.closest('.app-icon');
+    if (!icon || !iconData.has(icon)) return;
     const { x, y } = getXY(e);
     sx = x; sy = y; st = Date.now();
     active = true; dragging = false;
-    el.classList.add('pressing');
+    activeIcon = icon;
+    icon.classList.add('pressing');
   }
 
   function onMove(e) {
@@ -249,10 +257,15 @@ function attachIconSwipe(el, app, pageIdx) {
     const dx = x - sx, dy = y - sy;
     if (!dragging) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      if (Math.abs(dy) > Math.abs(dx)) { active = false; el.classList.remove('pressing'); return; }
+      if (Math.abs(dy) > Math.abs(dx)) {
+        active = false;
+        activeIcon.classList.remove('pressing');
+        activeIcon = null;
+        return;
+      }
       dragging = true;
-      el.classList.remove('pressing');
-      el.classList.add('swiping');
+      activeIcon.classList.remove('pressing');
+      activeIcon.classList.add('swiping');
     }
     if (dx < 0) {
       e.preventDefault();
@@ -272,20 +285,21 @@ function attachIconSwipe(el, app, pageIdx) {
   function onEnd(e) {
     if (!active) return;
     active = false;
-    el.classList.remove('pressing', 'swiping');
+    const icon = activeIcon;
+    activeIcon = null;
+    icon.classList.remove('pressing', 'swiping');
     const ex = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
     const dx = ex - sx;
     const vx = dx / Math.max(1, Date.now() - st);
-
     if (dx < -THRESH || (vx < -0.4 && dx < -20)) {
-      onCommitForward(app, el);
+      onCommitForward(iconData.get(icon), icon);
     } else {
       applyPositions(true);
     }
   }
 
-  el.addEventListener('mousedown',  onStart, { passive: true });
-  el.addEventListener('touchstart', onStart, { passive: true });
+  pageEl.addEventListener('mousedown',  onStart, { passive: true });
+  pageEl.addEventListener('touchstart', onStart, { passive: true });
   window.addEventListener('mousemove',  onMove, { passive: false });
   window.addEventListener('touchmove',  onMove, { passive: false });
   window.addEventListener('mouseup',  onEnd);
